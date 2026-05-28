@@ -3,7 +3,7 @@ name: Daily Praise
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 13 * * *"
+    - cron: "7 14 * * *"
 
 jobs:
   praise:

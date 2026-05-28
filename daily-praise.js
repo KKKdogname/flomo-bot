@@ -24,9 +24,18 @@ if (!DEEPSEEK_API_KEY) {
   process.exit(1);
 }
 
+function pad(n) {
+  return String(n).padStart(2, "0");
+}
+
 function todayStr() {
   const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
+function nowStr() {
+  const now = new Date();
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 }
 
 async function deepseekChat(messages) {
@@ -75,7 +84,7 @@ async function main() {
   if (!todaysNotes || todaysNotes.length === 0) {
     await flomo.createNote(
       "今天还没有记录笔记，明天加油。\n\n#010.日记/夸奖",
-      { created_at: today }
+      { created_at: nowStr() }
     );
     console.log("[Daily Praise] No notes today. Created reminder note.");
     return;
@@ -123,7 +132,7 @@ ${notesText}
   ]);
 
   // Create the praise note
-  await flomo.createNote(praise, { created_at: today });
+  await flomo.createNote(praise, { created_at: nowStr() });
   console.log("[Daily Praise] Praise note created successfully!");
   console.log(praise.substring(0, 200) + "...");
 }
