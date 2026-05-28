@@ -24,18 +24,24 @@ if (!DEEPSEEK_API_KEY) {
   process.exit(1);
 }
 
+// All time functions use Asia/Shanghai timezone regardless of server location
+const TZ = "Asia/Shanghai";
+
 function pad(n) {
   return String(n).padStart(2, "0");
 }
 
 function todayStr() {
-  const now = new Date();
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const parts = new Date().toLocaleDateString("zh-CN", { timeZone: TZ }).split("/");
+  return `${parts[0]}-${pad(parts[1])}-${pad(parts[2])}`;
 }
 
 function nowStr() {
-  const now = new Date();
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  const d = new Date().toLocaleString("zh-CN", { timeZone: TZ, hour12: false });
+  // d looks like "2026/5/28 22:07:15"
+  const [datePart, timePart] = d.split(" ");
+  const dateParts = datePart.split("/");
+  return `${dateParts[0]}-${pad(dateParts[1])}-${pad(dateParts[2])} ${timePart}`;
 }
 
 async function deepseekChat(messages) {
