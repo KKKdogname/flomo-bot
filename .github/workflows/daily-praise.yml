@@ -1,0 +1,31 @@
+name: Daily Praise
+
+on:
+  schedule:
+    # 每天北京时间 21:17 (UTC 13:17) 运行
+    - cron: "17 13 * * *"
+  workflow_dispatch:  # 允许手动触发测试
+
+jobs:
+  praise:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install --production
+
+      - name: Run daily praise
+        env:
+          FLOMO_MCP_URL: "https://flomoapp.com/mcp"
+          FLOMO_MCP_TOKEN: ${{ secrets.FLOMO_MCP_TOKEN }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: node daily-praise.js

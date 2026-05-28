@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>flomo Chat</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div id="sidebar-header">
+        <button id="btn-new-chat" class="btn-primary">+ 新建对话</button>
+      </div>
+      <div id="conversation-list"></div>
+      <div id="sidebar-footer">
+        <button id="btn-settings" class="btn-secondary">设置</button>
+      </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main id="chat-area">
+      <header id="chat-header">
+        <button id="btn-toggle-sidebar" class="btn-icon" title="Toggle sidebar">☰</button>
+        <h2 id="conversation-title">flomo Chat</h2>
+        <span id="provider-badge"></span>
+      </header>
+      <div id="message-list">
+        <div class="welcome-message">
+          <h1>flomo Chat</h1>
+          <p>用自然语言与你的 flomo 笔记对话。</p>
+          <div class="suggestion-chips">
+            <button class="chip" data-text="今天回顾">今天回顾</button>
+            <button class="chip" data-text="搜索心理学">搜索心理学</button>
+            <button class="chip" data-text="我的标签">我的标签</button>
+            <button class="chip" data-text="创建笔记：今天学到了">创建笔记：今天学到了</button>
+          </div>
+          <p class="help-hint">输入 "帮助" 查看所有支持的操作</p>
+        </div>
+      </div>
+      <div id="chat-input-area">
+        <textarea
+          id="message-input"
+          placeholder="输入消息... (Enter 发送, Shift+Enter 换行)"
+          rows="1"
+        ></textarea>
+        <button id="btn-send" class="btn-primary" disabled>发送</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <h3>设置</h3>
+      <div class="form-group">
+        <label for="setting-provider">AI Provider</label>
+        <select id="setting-provider">
+          <option value="">无 (命令解析模式)</option>
+          <option value="deepseek">DeepSeek</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="setting-api-key">API Key</label>
+        <input type="password" id="setting-api-key" placeholder="输入 API Key">
+        <span id="api-key-status"></span>
+      </div>
+      <div class="form-group" id="model-group" style="display:none">
+        <label for="setting-model">Model</label>
+        <input type="text" id="setting-model" value="deepseek-chat">
+      </div>
+      <div class="modal-actions">
+        <button id="btn-save-settings" class="btn-primary">保存</button>
+        <button id="btn-close-settings" class="btn-secondary">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/markdown.js"></script>
+  <script src="/js/settings.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/chat.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
