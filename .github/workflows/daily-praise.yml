@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 14 * * *"    # 22:00 Beijing time (14:00 UTC) — daily praise
+    - cron: "5 14 28-31 * *"  # 22:05 Beijing time (14:05 UTC) on days 28-31 — monthly summary
     - cron: "30 23 * * *"   # 07:30 Beijing time (23:30 UTC) — morning suggestion
 
 jobs:
@@ -22,6 +23,22 @@ jobs:
           FLOMO_MCP_TOKEN: ${{ secrets.FLOMO_MCP_TOKEN }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: node daily-praise.js
+
+  monthly-summary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install --production
+      - name: Generate monthly summary note
+        env:
+          FLOMO_MCP_URL: "https://flomoapp.com/mcp"
+          FLOMO_MCP_TOKEN: ${{ secrets.FLOMO_MCP_TOKEN }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: node monthly-summary.js
 
   morning-suggestion:
     runs-on: ubuntu-latest
