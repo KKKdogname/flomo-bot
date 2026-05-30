@@ -1,9 +1,10 @@
-name: Daily Praise
+name: Daily Flomo Automation
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "7 14 * * *"
+    - cron: "0 14 * * *"    # 22:00 Beijing time (14:00 UTC) — daily praise
+    - cron: "30 23 * * *"   # 07:30 Beijing time (23:30 UTC) — morning suggestion
 
 jobs:
   praise:
@@ -21,3 +22,19 @@ jobs:
           FLOMO_MCP_TOKEN: ${{ secrets.FLOMO_MCP_TOKEN }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: node daily-praise.js
+
+  morning-suggestion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install --production
+      - name: Generate morning suggestion note
+        env:
+          FLOMO_MCP_URL: "https://flomoapp.com/mcp"
+          FLOMO_MCP_TOKEN: ${{ secrets.FLOMO_MCP_TOKEN }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: node morning-suggestion.js

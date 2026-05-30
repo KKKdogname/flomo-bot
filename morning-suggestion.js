@@ -1,10 +1,9 @@
-// Daily Praise Script — runs on GitHub Actions, no local server needed
-// Connects to flomo MCP, reads today's notes, generates praise via DeepSeek
+// Morning Suggestion Script — runs at 7:30 AM Beijing time
+// Reviews current month's notes and suggests what to do today
 
 import { McpClient } from "./mcp/client.js";
 import { FlomoService } from "./services/flomoService.js";
 
-// Try loading .env for local testing; in GitHub Actions env vars are set directly
 try {
   await import("dotenv/config");
 } catch (_) {
@@ -50,6 +49,11 @@ function todayStr() {
   return `${bj.year}-${pad(bj.month)}-${pad(bj.day)}`;
 }
 
+function monthStartStr() {
+  const bj = beijingNow();
+  return `${bj.year}-${pad(bj.month)}-01`;
+}
+
 function nowStr() {
   const bj = beijingNow();
   return `${bj.year}-${pad(bj.month)}-${pad(bj.day)} ${pad(bj.hour)}:${pad(bj.minute)}:${pad(bj.second)}`;
@@ -80,82 +84,90 @@ async function deepseekChat(messages) {
 }
 
 async function main() {
-  console.log("[Daily Praise] Starting...");
-  console.log(`[Daily Praise] System UTC: ${new Date().toISOString()}, Beijing: ${nowStr()}`);
+  console.log("[Morning Suggestion] Starting...");
+  console.log(`[Morning Suggestion] System UTC: ${new Date().toISOString()}, Beijing: ${nowStr()}`);
 
-  // Connect to flomo MCP
   const mcpClient = new McpClient(MCP_URL, MCP_TOKEN);
   await mcpClient.initialize();
   const flomo = new FlomoService(mcpClient);
 
   const today = todayStr();
-  console.log(`[Daily Praise] Date: ${today}`);
+  const monthStart = monthStartStr();
+  console.log(`[Morning Suggestion] Fetching notes from ${monthStart} to ${today}`);
 
-  // Search today's notes
-  const todaysNotes = await flomo.searchNotes("", {
-    start_date: today,
+  // Get all notes from this month
+  const monthNotes = await flomo.searchNotes("", {
+    start_date: monthStart,
     end_date: today,
-    limit: 50,
+    limit: 200,
   });
 
-  // If no notes today, create reminder and exit
-  if (!todaysNotes || todaysNotes.length === 0) {
+  if (!monthNotes || monthNotes.length === 0) {
     await flomo.createNote(
-      "今天还没有记录笔记，明天加油。\n\n#010.日记/夸奖 #AskAi/push",
+      "本月还没有记录笔记，从今天开始写下第一条吧。\n\n#AskAi/push",
       { created_at: nowStr() }
     );
-    console.log("[Daily Praise] No notes today. Created reminder note.");
+    console.log("[Morning Suggestion] No notes this month. Created reminder note.");
     return;
   }
 
-  console.log(`[Daily Praise] Found ${todaysNotes.length} notes.`);
+  console.log(`[Morning Suggestion] Found ${monthNotes.length} notes this month.`);
 
   // Format notes for AI
-  const notesText = todaysNotes
+  const notesText = monthNotes
     .map(
       (m, i) =>
-        `[笔记${i + 1}] ${m.content || ""}\n标签: ${(m.tags || []).map((t) => `#${t}`).join(" ")}`
+        `[笔记${i + 1}] ${m.created_at || "?"}\n${m.content || ""}\n标签: ${(m.tags || []).map((t) => `#${t}`).join(" ")}`
     )
     .join("\n\n---\n\n");
 
-  // Generate praise with DeepSeek
-  const systemPrompt = `你是一个温暖的朋友，擅长从用户的日常笔记中发现值得夸奖的具体事情。
+  const bjNow = beijingNow();
+  const weekdayNames = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
+  const beijingDate = new Date(Date.now() + BEIJING_OFFSET_MS);
+  const weekday = weekdayNames[beijingDate.getUTCDay()];
+  const todayDate = `${bjNow.year}年${bjNow.month}月${bjNow.day}日 ${weekday}`;
 
-从用户今天的笔记中，提取 2-5 件值得夸奖的具体事情。原则：
-- 必须具体，引用笔记中的实际行为或想法，不能空洞
-- 关注：自我觉察的时刻、采取的行动（哪怕很小）、克制的瞬间、诚实的面对、对别人的善意、照顾自己的行为
-- 语气温暖、像是在对一个好朋友说话
-- 每条 1-3 句话`;
+  const systemPrompt = `你是一个贴心的私人助手，擅长从用户的笔记中发现线索，给出实用且温暖的建议。
 
-  const userPrompt = `以下是我今天的笔记，请从中提取2-5件值得夸奖的具体事情：
+从用户本月的笔记中，分析用户的关注点、正在推进的事情、情绪状态，然后给出今天可以做什么的具体建议。
+
+原则：
+- 建议必须基于笔记中的实际内容，不能凭空编造
+- 关注：未完成的事项、需要推进的项目、值得深入的想法、需要放松的信号
+- 建议应该具体、可执行，不是泛泛而谈的心灵鸡汤
+- 语气温暖但不啰嗦`;
+
+  const userPrompt = `以下是我本月（截止今天 ${todayDate}）的所有笔记：
 
 ${notesText}
 
+请基于以上笔记，给我今天可以做什么的建议。
+
 请严格按照以下格式输出（flomo仅支持加粗和有序列表）：
 
-**今天值得夸奖的事** 🐨
+**今日建议** 🌅
 
-1. 第一条夸奖内容
-2. 第二条夸奖内容
+1. 第一条具体建议
+2. 第二条具体建议
+3. 第三条具体建议
 ...
 
-#010.日记/夸奖 #AskAi/push
+#AskAi/push
 
-注意：最后一行必须是 #010.日记/夸奖 #AskAi/push 标签，不要加其他内容。`;
+注意：最后一行必须是 #AskAi/push 标签，不要加其他内容。`;
 
-  console.log("[Daily Praise] Calling DeepSeek...");
-  const praise = await deepseekChat([
+  console.log("[Morning Suggestion] Calling DeepSeek...");
+  const suggestion = await deepseekChat([
     { role: "system", content: systemPrompt },
     { role: "user", content: userPrompt },
   ]);
 
-  // Create the praise note
-  await flomo.createNote(praise, { created_at: nowStr() });
-  console.log("[Daily Praise] Praise note created successfully!");
-  console.log(praise.substring(0, 200) + "...");
+  await flomo.createNote(suggestion, { created_at: nowStr() });
+  console.log("[Morning Suggestion] Suggestion note created successfully!");
+  console.log(suggestion.substring(0, 200) + "...");
 }
 
 main().catch((err) => {
-  console.error("[Daily Praise] Error:", err.message);
+  console.error("[Morning Suggestion] Error:", err.message);
   process.exit(1);
 });
